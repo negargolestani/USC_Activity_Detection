@@ -13,7 +13,7 @@ eps = 1e-12
 ##########################################################################################################
 class DATA(object):    
     # ---------------------------------------------------------------------------------------------------   
-    def __init__(self, filePath=None, X=None, Y=None, S=None, activity_dict=None):    
+    def __init__(self, filePath=None, X=None, Y=None, S=None, activity_dict=None, subject_dict=None):    
         if filePath is not None: 
             self.load(filePath)
         else:
@@ -21,6 +21,7 @@ class DATA(object):
             if Y is not None: self.Y = copy.deepcopy(Y)
             if S is not None: self.S = copy.deepcopy(S)
             if activity_dict is not None: self.activity_dict = copy.deepcopy(activity_dict)   
+            if subject_dict is not None: self.subject_dict = copy.deepcopy(subject_dict)   
         return
     # ---------------------------------------------------------------------------------------------------   
     def load(self, filePath):   
@@ -28,22 +29,25 @@ class DATA(object):
         self.Y = list()
         self.S = list()
         self.activity_dict = dict()
-    
-        database = np.load(filePath)
-        for data in database:
-            x = data['data']    
-            s = data['subjectNum']
-            activity = data['activityType']
-            if activity in self.activity_dict:
-                y = self.activity_dict[activity]
-            else:
-                y = len(self.activity_dict)
-                self.activity_dict.update({activity:y})
+        self.subject_dict = dict()
 
-            self.X.append(x)
-            self.Y.append(y)
-            self.S.append(s)
-        
+        database = np.load(filePath)
+        for sample in database:
+            # Data
+            data = sample['Data']
+            # Activity to number (y)
+            activity = sample['Activity']
+            if activity not in self.activity_dict: 
+                self.activity_dict.update({activity:len(self.activity_dict)})
+            # Subject to number (s)
+            subject = sample['Subject']
+            if subject not in self.subject_dict: 
+                self.subject_dict.update({subject:len(self.subject_dict)})
+            # lists
+            self.X.append( np.abs(data) )
+            self.Y.append( self.activity_dict[activity] )
+            self.S.append( self.subject_dict[subject] )
+
         self.X = np.array(self.X)
         self.Y = np.array(self.Y)
         self.S = np.array(self.S)
